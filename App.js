@@ -1,21 +1,49 @@
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {NavigationContainer} from '@react-navigation/native';
+import {createStackNavigator} from '@react-navigation/stack';
 
-export default function App() {
+
+const RootStack = createStackNavigator();
+
+export default function() {
+  const {auth, state} = useAuth();
+  // const isDarkMode = useDarkMode();
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const switchTheme = React.useCallback(() => {
+    setIsDarkMode(!isDarkMode);
+  }, [isDarkMode]);
+
+  function renderScreens() {
+    if (state.loading) {
+      return <RootStack.Screen name={'Splash'} component={SplashScreen} />;
+    }
+    return state.user ? (
+      <RootStack.Screen name={'MainStack'}>
+        {() => (
+          <UserContext.Provider value={state.user}>
+            <MainStackNavigator />
+          </UserContext.Provider>
+        )}
+      </RootStack.Screen>
+    ) : (
+      <RootStack.Screen name={'AuthStack'} component={AuthStackNavigator} />
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>My Booking APP</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ThemeContext.Provider value={switchTheme}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <AuthContext.Provider value={auth}>
+        <NavigationContainer theme={isDarkMode ? darkTheme : lightTheme}>
+          <RootStack.Navigator
+            screenOptions={{
+              headerShown: false,
+              animationEnabled: false,
+            }}>
+            {renderScreens()}
+          </RootStack.Navigator>
+        </NavigationContainer>
+      </AuthContext.Provider>
+    </ThemeContext.Provider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
